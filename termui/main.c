@@ -13,34 +13,34 @@ void* always()
 
 termui* build_message(const char* sender, const char* text)
 {
-    return termui_init(TERMUI_ROW | TERMUI_EXPAND, 0, 1,
-        termui_init(0, 1, 0, 0),
-        termui_text(sender, termui_init(0, 5, 1, 0)),
-        termui_init(0, 2, 0, 0),
-        termui_text(text, termui_init(TERMUI_EXPAND, 0, 1, 0)),
+    return termui_box(TERMUI_ROW | TERMUI_EXPAND, 0, 1,
+        termui_box(0, 1, 0, 0),
+        termui_text(sender, termui_box(0, 5, 1, 0)),
+        termui_box(0, 2, 0, 0),
+        termui_text(text, termui_box(TERMUI_EXPAND, 0, 1, 0)),
     0);
 }
 
 int main()
 {
-    termui_raw_mode(1);
+    termui_init();
     printf(TERMUI_NOBLINK);
 
-    termui* root = termui_init(TERMUI_ROW | TERMUI_EXPAND, 0, 0,
-        termui_init(TERMUI_EXPAND, 0, 0,
-            termui_title("Messages", termui_init(TERMUI_BORDER | TERMUI_EXPAND, 0, 0,
-                termui_init(TERMUI_EXPAND, 0, 0, 0),
+    termui* root = termui_box(TERMUI_ROW | TERMUI_EXPAND, 0, 0,
+        termui_box(TERMUI_EXPAND, 0, 0,
+            termui_title("Messages", termui_box(TERMUI_BORDER | TERMUI_EXPAND, 0, 0,
+                termui_box(TERMUI_EXPAND, 0, 0, 0),
                 build_message("Seha:", "Kako je brate?"),
-                termui_init(0, 0, 1, 0),
+                termui_box(0, 0, 1, 0),
                 build_message("Vapi:", "Dobro je Elham!"),
-                termui_init(0, 0, 1, 0),
+                termui_box(0, 0, 1, 0),
             0)),
-            termui_text("Input text...", termui_init(TERMUI_BORDER | TERMUI_EXPAND, 0, 5, 0)),
+            termui_text("Input text...", termui_box(TERMUI_BORDER | TERMUI_EXPAND, 0, 5, 0)),
         0),
-        termui_title("People", termui_init(TERMUI_BORDER | TERMUI_EXPAND, 20, 0,
-            termui_text(" - Seha", termui_init(TERMUI_EXPAND, 0, 1, 0)),
-            termui_text(" - Vapi", termui_init(TERMUI_EXPAND, 0, 1, 0)),
-            termui_text(" - xX_GameSlayer_Xx", termui_init(TERMUI_EXPAND, 0, 1, 0)),
+        termui_title("People", termui_box(TERMUI_BORDER | TERMUI_EXPAND, 20, 0,
+            termui_text(" - Seha", termui_box(TERMUI_EXPAND, 0, 1, 0)),
+            termui_text(" - Vapi", termui_box(TERMUI_EXPAND, 0, 1, 0)),
+            termui_text(" - xX_GameSlayer_Xx", termui_box(TERMUI_EXPAND, 0, 1, 0)),
         0)),
     0);
 

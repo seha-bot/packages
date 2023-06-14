@@ -17,8 +17,8 @@
 #define TERMUI_EXPAND 0x04
 #define TERMUI_DISABLED 0x08
 
+void termui_init(void);
 void termui_terminal_size(int*, int*);
-void termui_raw_mode(int);
 char termui_read(char*);
 
 struct termui
@@ -30,7 +30,7 @@ struct termui
 };
 typedef struct termui termui;
 
-termui* termui_init(char, int, int, ...);
+termui* termui_box(char, int, int, ...);
 termui* termui_title(const char*, termui*);
 termui* termui_text(const char*, termui*);
 termui* termui_enabled(int, termui*);

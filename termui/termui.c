@@ -9,6 +9,17 @@
 
 // TODO: fix expanded last line empty (possible hint: uneven or even size)
 
+void termui_init(void)
+{
+    struct termios raw;
+    tcgetattr(STDIN_FILENO, &raw);
+    raw.c_lflag &= ~(ECHO | ICANON | ISIG);
+    raw.c_iflag &= ~(IXON | ICRNL);
+    raw.c_oflag &= ~(OPOST);
+    tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw);
+    printf(TERMUI_RESET);
+}
+
 void termui_terminal_size(int* width, int* height)
 {
     struct winsize w;
@@ -16,23 +27,6 @@ void termui_terminal_size(int* width, int* height)
 
     *width = w.ws_col;
     *height = w.ws_row;
-}
-
-struct termios orig_termios;
-
-void termui_raw_mode(int enable)
-{
-    if(enable)
-    {
-        tcgetattr(STDIN_FILENO, &orig_termios);
-        struct termios raw = orig_termios;
-        raw.c_lflag &= ~(ECHO | ICANON | ISIG);
-        raw.c_iflag &= ~(IXON | ICRNL);
-        raw.c_oflag &= ~(OPOST);
-        tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw);
-    }
-    else tcsetattr(STDIN_FILENO, TCSAFLUSH, &orig_termios);
-    printf(TERMUI_RESET);
 }
 
 char termui_read(char* out)
@@ -43,7 +37,7 @@ char termui_read(char* out)
     return c;
 }
 
-termui* termui_init(char flags, int width, int height, ...)
+termui* termui_box(char flags, int width, int height, ...)
 {
     va_list args;
     va_start(args, height);
@@ -59,7 +53,7 @@ termui* termui_init(char flags, int width, int height, ...)
 
     termui object = { children, width, height, 0, 0, 0, 0, flags };
     termui* object_pointer = 0;
-    nec_push(object_pointer, object); // TODO: Store this someplace else
+    nec_push(object_pointer, object);
     va_end(args);
     return object_pointer;
 }
@@ -167,7 +161,7 @@ int termui_plot(termui* obj, int singleOrParentExpanded)
         }
         freeSpace -= MAIN_AXIS(child);
     }
-    const int expandedSize = (float)freeSpace / expandedChildCount;
+    const int expandedSize = freeSpace / max(expandedChildCount, 1);
 
     int axisOffset = 0, crossAxisSize = 0;
     for(int i = 0; i < nec_size(obj->children); i++)
