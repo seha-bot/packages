@@ -43,14 +43,12 @@ int main()
     char* input = 0, c;
     nec_push(input, 0);
     termui_terminal_size(&root->width, &root->height);
-    termui_plot(root, 0);
+    termui_plot(root);
     while(1)
     {
-        printf(TERMUI_NOBLINK);
         key->text = input;
-        termui_plot(root, 0);
-        printf(TERMUI_MC TERMUI_BLINK, key->y + 1, key->x + (int)nec_size(input)); // TODO: this should be auto enabled by a flag
-        fflush(stdout);
+        termui_replot(key);
+        termui_focus(key);
         termui_read((char*)&c);
         if(c == 127 && nec_size(input) > 1)
         {
