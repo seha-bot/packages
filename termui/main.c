@@ -1,15 +1,7 @@
 #include <stdio.h>
-#include <unistd.h>
-#include <pthread.h>
+#include <string.h>
 #include "termui.h"
-
-volatile char c = 0;
-
-void* always()
-{
-    while(1) termui_read((char*)&c);
-    return 0;
-}
+#include "nec.h"
 
 termui* build_message(const char* sender, const char* text)
 {
@@ -24,8 +16,8 @@ termui* build_message(const char* sender, const char* text)
 int main()
 {
     termui_init();
-    printf(TERMUI_NOBLINK);
 
+    termui* key;
     termui* root = termui_box(TERMUI_ROW | TERMUI_EXPAND, 0, 0,
         termui_box(TERMUI_EXPAND, 0, 0,
             termui_title("Messages", termui_box(TERMUI_BORDER | TERMUI_EXPAND, 0, 0,
@@ -35,7 +27,11 @@ int main()
                 build_message("Vapi:", "Dobro je Elham!"),
                 termui_box(0, 0, 1, 0),
             0)),
-            termui_text("Input text...", termui_box(TERMUI_BORDER | TERMUI_EXPAND, 0, 5, 0)),
+            termui_title("Input text...", termui_box(TERMUI_BORDER | TERMUI_ROW | TERMUI_EXPAND, 0, 5,
+                termui_box(0, 1, 0, 0),
+                key = termui_box(TERMUI_EXPAND, 0, 0, 0),
+                termui_box(0, 1, 0, 0),
+            0)),
         0),
         termui_title("People", termui_box(TERMUI_BORDER | TERMUI_EXPAND, 20, 0,
             termui_text(" - Seha", termui_box(TERMUI_EXPAND, 0, 1, 0)),
@@ -44,14 +40,34 @@ int main()
         0)),
     0);
 
-    pthread_t tid = 0;
-    pthread_create(&tid, 0, always, 0);
-
-    while(c != 'q')
+    char* input = 0, c;
+    nec_push(input, 0);
+    termui_terminal_size(&root->width, &root->height);
+    termui_plot(root, 0);
+    while(1)
     {
-        termui_terminal_size(&root->width, &root->height);
+        printf(TERMUI_NOBLINK);
+        key->text = input;
         termui_plot(root, 0);
-        usleep(10000);
+        printf(TERMUI_MC TERMUI_BLINK, key->y + 1, key->x + (int)nec_size(input)); // TODO: this should be auto enabled by a flag
+        fflush(stdout);
+        termui_read((char*)&c);
+        if(c == 127 && nec_size(input) > 1)
+        {
+            nec_pop(input);
+            input[nec_size(input) - 1] = 0;
+            continue;
+        }
+        if(c == 13)
+        {
+            if(strcmp(input, "exit") == 0) return 0;
+            nec_free(input);
+            nec_push(input, 0);
+            continue;
+        }
+        if(c < 32 || c > 126) continue;
+        input[nec_size(input) - 1] = c;
+        nec_push(input, 0);
     }
     return 0;
 }

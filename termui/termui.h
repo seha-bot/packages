@@ -5,8 +5,17 @@
 #define TERMUI_RESET "\033[0m"
 #define TERMUI_OK "\033[30m"
 #define TERMUI_BAD "\033[31m"
+#define TERMUI_BLACK_B "\033[40m"
+#define TERMUI_RED_B "\033[41m"
+#define TERMUI_GREEN_B "\033[42m"
+#define TERMUI_YELLOW_B "\033[43m"
+#define TERMUI_PURPLE_B "\033[44m"
+#define TERMUI_PINK_B "\033[45m"
+#define TERMUI_BLUE_B "\033[46m"
+#define TERMUI_WHITE_B "\033[47m"
 
 // CONTROL
+#define TERMUI_BLINK "\033[?25h"
 #define TERMUI_NOBLINK "\033[?25l"
 #define TERMUI_MC "\033[%d;%dH"
 #define TERMUI_CLEAR "\033[2J"
