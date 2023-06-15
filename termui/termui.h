@@ -32,6 +32,7 @@
 #define TERMUI_EXPAND 0x04
 
 void termui_init(void);
+int termui_deinit(void);
 void termui_terminal_size(int*, int*);
 char termui_read(char*);
 

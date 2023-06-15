@@ -9,15 +9,24 @@
 
 // TODO: fix expanded last line empty (possible hint: uneven or even size)
 
+struct termios termiosOriginal;
 void termui_init(void)
 {
     struct termios raw;
     tcgetattr(STDIN_FILENO, &raw);
+    termiosOriginal = raw;
     raw.c_lflag &= ~(ECHO | ICANON | ISIG);
     raw.c_iflag &= ~(IXON | ICRNL);
     raw.c_oflag &= ~(OPOST);
     tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw);
     printf(TERMUI_RESET);
+}
+
+int termui_deinit(void)
+{
+    tcsetattr(STDIN_FILENO, TCSAFLUSH, &termiosOriginal);
+    printf(TERMUI_RESET TERMUI_CLEAR TERMUI_MC, 1, 1);
+    return 0;
 }
 
 void termui_terminal_size(int* width, int* height)
