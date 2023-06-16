@@ -21,15 +21,17 @@ char* str_cpy(const char* src)
     return string;
 }
 
+int is_space(char c)
+{
+    return c == ' ' || c == '\n' || c == '\t' || c == '\v' || c == '\f' || c == '\r';
+}
+
 char* str_trim(const char* src)
 {
-    char* string = 0;
-    while(*src != 0)
-    {
-        if(*src == ' ' || *src == '\n' || *src == '\t' ||
-          *src == '\v' || *src == '\f' || *src == '\r') continue;
-        nec_push(string, *src++);
-    }
+    char* string = 0, c;
+    while(is_space(*src)) src++;
+    while(*src) nec_push(string, *src++);
+    while(string && is_space(string[nec_size(string) - 1])) nec_pop(string);
     nec_push(string, 0);
     return string;
 }
@@ -97,14 +99,14 @@ int main()
             else
             {
                 char* msg = str_trim(input);
-                const int isEmpty = strlen(msg) == 0;
-                nec_free(msg);
-                nec_push(messagesKey->children,
-                    build_message("Seha:", str_cpy(input))
+                if(strlen(msg) == 0) nec_free(msg);
+                else nec_push(messagesKey->children,
+                    build_message("Seha:", msg)
                 );
             }
             nec_free(input);
             input = str_init();
+            inputKey->text = input;
             termui_terminal_size(&root->width, &root->height);
             termui_plot(root);
             continue;

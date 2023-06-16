@@ -82,7 +82,7 @@ termui* termui_text(const char* text, termui* obj)
 void termui_focus(termui* obj)
 {
     const int width = obj->plotWidth - 2 * (obj->flags & TERMUI_BORDER);
-    const int textSize = strlen(obj->text);
+    const int textSize = obj->text ? strlen(obj->text) : 0;
     const int lines = textSize / width;
     const int chars = textSize % width;
     printf(TERMUI_MC, obj->y + lines + 1, obj->x + chars + 1);
