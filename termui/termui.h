@@ -38,11 +38,12 @@ char termui_read(char*);
 
 struct termui
 {
-    struct termui **children;
+    struct termui *parent, **children;
     int plotWidth, plotHeight;
     int width, height, x, y;
+    int scroll;
     const char *title, *text;
-    char isEnabled, flags;
+    char isEnabled, flags; // move isEnabled inside flags?
 };
 typedef struct termui termui;
 

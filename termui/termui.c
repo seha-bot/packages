@@ -48,22 +48,24 @@ char termui_read(char* out)
 
 termui* termui_box(char flags, int width, int height, ...)
 {
+    termui object = { 0, 0, 0, 0, width, height, 0, 0, 0, 0, 0, 1, flags };
+    termui* object_pointer = 0;
+    nec_push(object_pointer, object);
+
     va_list args;
     va_start(args, height);
 
     termui** children = 0;
-
     while(1)
     {
         termui* child = va_arg(args, termui*);
         if(!child) break;
+        child->parent = object_pointer;
         nec_push(children, child);
     }
-
-    termui object = { children, 0, 0, width, height, 0, 0, 0, 0, 1, flags };
-    termui* object_pointer = 0;
-    nec_push(object_pointer, object);
     va_end(args);
+
+    object_pointer->children = children;
     return object_pointer;
 }
 
@@ -89,29 +91,54 @@ void termui_focus(termui* obj)
     fflush(stdout);
 }
 
+void print_if_inside(termui* obj, int x, int y, char c)
+{
+    x += obj->x;
+    y += obj->y;
+    if(!obj->parent)
+    {
+        printf(TERMUI_MC "%c", y + 1, x + 1, c);
+        return;
+    }
+    const int hasBorder = obj->parent->flags & TERMUI_BORDER;
+    const int l = obj->parent->x + hasBorder;
+    const int r = obj->parent->x + obj->parent->width - 1 - hasBorder;
+    const int t = obj->parent->y + hasBorder;
+    const int b = obj->parent->y + obj->parent->height - 1 - hasBorder;
+    if(x < l || x > r || y < t || y > b) return;
+    printf(TERMUI_MC "%c", y + 1, x + 1, c);
+}
+
 void clear_view(termui* obj)
 {
     for(int y = 0; y < obj->height; y++)
     {
-        printf(TERMUI_MC, y + obj->y + 1, obj->x + 1);
-        for(int x = 0; x < obj->width; x++) printf(" ");
+        for(int x = 0; x < obj->width; x++)
+        {
+            print_if_inside(obj, x, y, ' ');
+        }
     }
 }
 
 void draw_border(termui* obj)
 {
-    int i;
-    printf(TERMUI_MC "/", obj->y + 1, obj->x + 1);
-    for(i = 0; i < obj->width - 2; i++) printf("-");
-    printf("\\");
-    for(i = 2; i < obj->height; i++)
+    print_if_inside(obj, 0, 0, '/');
+    for(int x = 1; x < obj->width - 1; x++)
     {
-        printf(TERMUI_MC "|", i + obj->y, obj->x + 1);
-        printf(TERMUI_MC "|", i + obj->y, obj->width + obj->x);
+        print_if_inside(obj, x, 0, '-');
     }
-    printf(TERMUI_MC "\\", obj->height + obj->y, obj->x + 1);
-    for(i = 0; i < obj->width - 2; i++) printf("-");
-    printf("/");
+    print_if_inside(obj, obj->width - 1, 0, '\\');
+    for(int y = 1; y < obj->height - 1; y++)
+    {
+        print_if_inside(obj, 0, y, '|');
+        print_if_inside(obj, obj->width - 1, y, '|');
+    }
+    print_if_inside(obj, 0, obj->height - 1, '\\');
+    for(int x = 1; x < obj->width - 1; x++)
+    {
+        print_if_inside(obj, x, obj->height - 1, '-');
+    }
+    print_if_inside(obj, obj->width - 1, obj->height - 1, '/');
 }
 
 void draw_text(const char* text, int width, int height, int x1, int y1)
@@ -181,7 +208,7 @@ void termui_plot(termui* obj)
     }
     const int expandedSize = freeSpace / max(expandedChildCount, 1);
 
-    int axisOffset = 0, crossAxisSize = 0;
+    int axisOffset = obj->scroll, crossAxisSize = 0;
     for(int i = 0; i < nec_size(obj->children); i++)
     {
         termui* child = obj->children[i];
