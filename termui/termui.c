@@ -117,7 +117,8 @@ void draw_border(termui* obj)
 void draw_text(const char* text, int width, int height, int x1, int y1)
 {
     const int area = width * height;
-    int textSize = strlen(text);
+    if(text[0] == 0) return;
+    const int textSize = strlen(text);
     const int hasOverflow = textSize > area;
 
     int i = 0;
@@ -225,5 +226,15 @@ void termui_replot(termui* obj)
     termui_plot(obj);
     obj->width = oldSize[0];
     obj->height = oldSize[1];
+}
+
+void termui_free(termui* obj)
+{
+    for(int i = 0; i < nec_size(obj->children); i++)
+    {
+        termui_free(obj->children[i]);
+    }
+    nec_free(obj->children);
+    nec_free(obj);
 }
 

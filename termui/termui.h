@@ -51,7 +51,8 @@ termui* termui_title(const char*, termui*);
 termui* termui_text(const char*, termui*);
 void termui_focus(termui*); // TODO: add hasFocus field and you know what to do on the color update
 void termui_plot(termui*);
-void termui_replot(termui* obj);
+void termui_replot(termui*);
+void termui_free(termui*);
 
 #endif /* SEHA_TERMUI */
 
