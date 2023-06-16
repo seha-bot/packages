@@ -33,7 +33,6 @@
 
 void termui_init(void);
 int termui_deinit(void);
-void termui_terminal_size(int*, int*);
 char termui_read(char*);
 
 struct termui
@@ -47,6 +46,7 @@ struct termui
 };
 typedef struct termui termui;
 
+void termui_fullscreen(termui*);
 termui* termui_box(char, int, int, ...);
 termui* termui_title(const char*, termui*);
 termui* termui_text(const char*, termui*);

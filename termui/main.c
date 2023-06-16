@@ -47,8 +47,7 @@ int main()
     termui* root = termui_box(TERMUI_ROW | TERMUI_EXPAND, 0, 0,
         termui_box(TERMUI_EXPAND, 0, 0,
             messagesKey = termui_title("Messages", termui_box(TERMUI_BORDER | TERMUI_EXPAND, 0, 0,
-                // termui_box(TERMUI_EXPAND, 0, 0, 0),
-                termui_text("123456789", termui_box(0, 3, 3, 0)),
+                termui_box(TERMUI_EXPAND, 0, 0, 0),
             0)),
             termui_title("Input text...", termui_box(TERMUI_BORDER | TERMUI_ROW | TERMUI_EXPAND, 0, 5,
                 termui_box(0, 1, 0, 0),
@@ -64,7 +63,7 @@ int main()
     0);
 
     char* input = str_cpy(0), keyCode;
-    termui_terminal_size(&root->width, &root->height);
+    termui_fullscreen(root);
     termui_plot(root);
     while(1)
     {
@@ -79,17 +78,7 @@ int main()
         }
         if(keyCode == 13)
         {
-            if(strcmp(input, "l") == 0)
-            {
-                messagesKey->scroll--;
-                goto next;
-            }
-            if(strcmp(input, "h") == 0)
-            {
-                messagesKey->scroll++;
-                goto next;
-            }
-            if(strcmp(input, "/exit") == 0) goto finish;
+            if(strcmp(input, "/exit") == 0) break;
             if(strcmp(input, "/people") == 0)
             {
                 peopleKey->isEnabled = !peopleKey->isEnabled;
@@ -106,7 +95,7 @@ next:
             nec_free(input);
             input = str_cpy(0);
             inputKey->text = input;
-            termui_terminal_size(&root->width, &root->height);
+            termui_fullscreen(root);
             termui_plot(root);
             continue;
         }
@@ -114,7 +103,6 @@ next:
         str_push(input, keyCode);
     }
 
-finish:
     nec_free(input);
     for(int i = 1; i < nec_size(messagesKey->children); i++)
     {
