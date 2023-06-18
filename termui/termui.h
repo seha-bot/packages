@@ -29,19 +29,20 @@
 // FLAGS
 #define TERMUI_BORDER 0x01
 #define TERMUI_ROW    0x02
-#define TERMUI_EXPAND 0x04
+#define TERMUI_REVERSE 0x04
 
 void termui_init(void);
-int termui_deinit(void);
+void termui_deinit(void);
 char termui_read(char*);
 
 struct termui
 {
-    struct termui *parent, **children;
-    int plotWidth, plotHeight;
-    int width, height, x, y;
-    int scroll;
+    struct termui **children;
     const char *title, *text;
+    int width, height; // The initial size
+    int plotWidth, plotHeight; // Runtime calculated size (changes if widget is expanded)
+    int left, right, top, bottom; // Runtime calculated drawing area
+    int scroll;
     char isEnabled, flags; // move isEnabled inside flags?
 };
 typedef struct termui termui;
@@ -50,9 +51,8 @@ void termui_fullscreen(termui*);
 termui* termui_box(char, int, int, ...);
 termui* termui_title(const char*, termui*);
 termui* termui_text(const char*, termui*);
-void termui_focus(termui*); // TODO: add hasFocus field and you know what to do on the color update
-void termui_plot(termui*);
-void termui_replot(termui*);
+void termui_focus(const termui*); // TODO: add hasFocus field and you know what to do on the color update
+void termui_plot(const termui*);
 void termui_free(termui*);
 
 #endif /* SEHA_TERMUI */

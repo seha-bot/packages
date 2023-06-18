@@ -28,14 +28,14 @@ char* str_trim(const char* src)
 
 termui* build_message(const char* sender, const char* text)
 {
-    return termui_box(TERMUI_EXPAND, 0, 2,
-        termui_box(TERMUI_ROW | TERMUI_EXPAND, 0, 1,
-            termui_box(0, 1, 0, 0),
+    return termui_box(0, 0, 2,
+        termui_box(TERMUI_ROW, 0, 1,
+            termui_box(0, 1, 1, 0),
             termui_text(sender, termui_box(0, 5, 1, 0)),
-            termui_box(0, 1, 0, 0),
-            termui_text(text, termui_box(TERMUI_EXPAND, 0, 1, 0)),
+            termui_box(0, 1, 1, 0),
+            termui_text(text, termui_box(0, 0, 1, 0)),
         0),
-        termui_box(0, 0, 1, 0),
+        termui_box(0, 1, 1, 0),
     0);
 }
 
@@ -44,21 +44,19 @@ int main()
     termui_init();
 
     termui *inputKey, *peopleKey, *messagesKey;
-    termui* root = termui_box(TERMUI_ROW | TERMUI_EXPAND, 0, 0,
-        termui_box(TERMUI_EXPAND, 0, 0,
-            messagesKey = termui_title("Messages", termui_box(TERMUI_BORDER | TERMUI_EXPAND, 0, 0,
-                termui_box(TERMUI_EXPAND, 0, 0, 0),
-            0)),
-            termui_title("Input text...", termui_box(TERMUI_BORDER | TERMUI_ROW | TERMUI_EXPAND, 0, 5,
-                termui_box(0, 1, 0, 0),
-                inputKey = termui_box(TERMUI_EXPAND, 0, 0, 0),
-                termui_box(0, 1, 0, 0),
+    termui* root = termui_box(TERMUI_ROW, 0, 0,
+        termui_box(0, 0, 0,
+            messagesKey = termui_title("Messages", termui_box(TERMUI_BORDER | TERMUI_REVERSE, 0, 0, 0)),
+            termui_title("Input text...", termui_box(TERMUI_BORDER | TERMUI_ROW, 0, 5,
+                termui_box(0, 1, 1, 0),
+                inputKey = termui_box(0, 0, 0, 0),
+                termui_box(0, 1, 1, 0),
             0)),
         0),
-        peopleKey = termui_title("People", termui_box(TERMUI_BORDER | TERMUI_EXPAND, 20, 0,
-            termui_text(" - Seha", termui_box(TERMUI_EXPAND, 0, 1, 0)),
-            termui_text(" - Vapi", termui_box(TERMUI_EXPAND, 0, 1, 0)),
-            termui_text(" - xX_GameSlayer_Xx", termui_box(TERMUI_EXPAND, 0, 1, 0)),
+        peopleKey = termui_title("People", termui_box(TERMUI_BORDER, 20, 0,
+            termui_text(" - Seha", termui_box(0, 0, 1, 0)),
+            termui_text(" - Vapi", termui_box(0, 0, 1, 0)),
+            termui_text(" - xX_GameSlayer_Xx", termui_box(0, 0, 1, 0)),
         0)),
     0);
 
@@ -68,7 +66,7 @@ int main()
     while(1)
     {
         inputKey->text = input;
-        termui_replot(inputKey);
+        termui_plot(inputKey);
         termui_focus(inputKey);
         termui_read((char*)&keyCode);
         if(keyCode == 127 && nec_size(input) > 1)
@@ -87,11 +85,13 @@ int main()
             {
                 char* msg = str_trim(input);
                 if(strlen(msg) == 0) nec_free(msg);
-                else nec_push(messagesKey->children,
-                    build_message("Seha:", msg)
-                );
+                else
+                {
+                    termui* new = build_message("Seha:", msg);
+                    //new->parent = messagesKey;
+                    nec_push(messagesKey->children, new);
+                }
             }
-next:
             nec_free(input);
             input = str_cpy(0);
             inputKey->text = input;
@@ -109,46 +109,7 @@ next:
         nec_free(messagesKey->children[i]->children[0]->children[3]->text);
     }
     termui_free(root);
-    return termui_deinit();
-}
-
-/*
-int main()
-{
-    termui_init();
-
-    const int towerWidth = 60;
-    const int towerHeight = 30;
-
-    termui *root, *scrollKey;
-    root = termui_box(TERMUI_EXPAND | TERMUI_ROW, 0, 0,
-        termui_box(TERMUI_EXPAND | TERMUI_BORDER, towerWidth, 0, 0),
-        termui_box(TERMUI_EXPAND, 0, 0,
-            termui_box(TERMUI_EXPAND | TERMUI_BORDER, 0, towerHeight, 0),
-            scrollKey = termui_box(TERMUI_EXPAND | TERMUI_BORDER | TERMUI_ROW, 0, 0,
-                //termui_text("123456789", termui_box(0, 3, 3, 0)),
-                termui_box(TERMUI_BORDER, 3, 3, 0),
-            0),
-            termui_box(TERMUI_EXPAND | TERMUI_BORDER, 0, towerHeight, 0),
-        0),
-        termui_box(TERMUI_EXPAND | TERMUI_BORDER, towerWidth, 0, 0),
-    0);
-
-    printf(TERMUI_NOCURSOR);
-    while(1)
-    {
-        termui_terminal_size(&root->width, &root->height);
-        termui_plot(root);
-        char c = termui_read(0);
-        if(c == 'q') break;
-        if(c != 'h' && c != 'l') continue;
-        if(c == 'h') scrollKey->scroll--;
-        if(c == 'l') scrollKey->scroll++;
-    }
-
-    termui_free(root);
     termui_deinit();
     return 0;
 }
-*/
 
