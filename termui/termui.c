@@ -8,8 +8,6 @@
 #include <termios.h>
 #include <sys/ioctl.h>
 
-// TODO: fix expanded last line empty (possible hint: uneven or even size)
-
 struct termios termiosOriginal;
 void termui_init(void)
 {
@@ -52,32 +50,22 @@ void termui_fullscreen(termui* obj)
 
 termui* termui_box(char flags, int width, int height, ...)
 {
-    termui object = { // TODO: after everything is done, compress this to single line
-        0,
-        0, 0,
-        width, height,
-        0, 0, 0, 0,
-        0, 0, 0, 0,
-        0,
-        1, flags
-    };
-    termui* object_pointer = 0;
-    nec_push(object_pointer, object);
-
     va_list args;
     va_start(args, height);
-
     termui** children = 0;
     while(1)
     {
         termui* child = va_arg(args, termui*);
         if(!child) break;
-        // child->parent = object_pointer;
         nec_push(children, child);
     }
     va_end(args);
 
-    object_pointer->children = children; //TODO: do this directly
+    termui object = {
+        children, 0, 0, width, height, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, flags
+    };
+    termui* object_pointer = 0;
+    nec_push(object_pointer, object);
     return object_pointer;
 }
 
@@ -129,28 +117,6 @@ void clear_view(const termui* obj)
     }
 }
 
-void draw_border(const termui* obj)
-{
-    termui real = *obj;
-    if(real.left-- == real.drawLeft) real.drawLeft--;
-    if(real.right++ == real.drawRight) real.drawRight++;
-    if(real.top-- == real.drawTop) real.drawTop--;
-    if(real.bottom++ == real.drawBottom) real.drawBottom++;
-    for(int y = real.top; y <= real.bottom; y++)
-    {
-        for(int x = real.left; x <= real.right; x++)
-        {
-            if(y != real.top && y != real.bottom && x != real.left && x != real.right) continue;
-            char c = y != real.top && y != real.bottom ? '|' : '-';
-            if(x == real.left && y == real.top) c = '/';
-            if(x == real.right && y == real.bottom) c = '/';
-            if(x == real.right && y == real.top) c = '\\';
-            if(x == real.left && y == real.bottom) c = '\\';
-            print_if_inside(&real, x, y, c);
-        }
-    }
-}
-
 void draw_text(const termui* obj)
 {
     if(obj->text[0] == 0) return;
@@ -172,14 +138,31 @@ void draw_text(const termui* obj)
     }
 }
 
-void draw_title(const termui* obj)
+void draw_border(const termui* obj)
 {
     termui real = *obj;
-    real.text = real.title;
-    real.top--;
+    if(real.left-- == real.drawLeft) real.drawLeft--;
+    if(real.right++ == real.drawRight) real.drawRight++;
+    if(real.top-- == real.drawTop) real.drawTop--;
+    if(real.bottom++ == real.drawBottom) real.drawBottom++;
+    for(int y = real.top; y <= real.bottom; y++)
+    {
+        for(int x = real.left; x <= real.right; x++)
+        {
+            if(y != real.top && y != real.bottom && x != real.left && x != real.right) continue;
+            char c = y != real.top && y != real.bottom ? '|' : '-';
+            if(x == real.left && y == real.top) c = '/';
+            if(x == real.right && y == real.bottom) c = '/';
+            if(x == real.right && y == real.top) c = '\\';
+            if(x == real.left && y == real.bottom) c = '\\';
+            print_if_inside(&real, x, y, c);
+        }
+    }
+    if(!real.title) return;
+    real.left += 2;
+    real.right -= 2;
     real.bottom = real.top;
-    real.left++;
-    real.right = real.left + strlen(real.title) - 1; // REF: realSize myb
+    real.text = real.title;
     draw_text(&real);
 }
 
@@ -197,15 +180,6 @@ void termui_plot(const termui* obj)
 {
     const int isRow = (obj->flags & TERMUI_ROW) >> 1;
     const int isReverse = (obj->flags & TERMUI_REVERSE) >> 2;
-
-    if(obj->flags & TERMUI_BORDER)
-    {
-        draw_border(obj);
-        if(obj->title) draw_title(obj);
-    }
-    clear_view(obj);
-    if(obj->text) draw_text(obj);
-
     const int mainAxis = (isRow ? obj->right - obj->left : obj->bottom - obj->top) + 1;
     const int crossAxis = (isRow ? obj->bottom - obj->top : obj->right - obj->left) + 1;
 
@@ -224,6 +198,8 @@ void termui_plot(const termui* obj)
         freeSpace -= mainAxis;
     }
     const int expandedSize = max(0, freeSpace / max(1, expandedChildCount));
+
+    clear_view(obj);
 
     int axisOffset = obj->scroll + freeSpace * isReverse;
     for(int i = 0; i < nec_size(obj->children); i++)
@@ -254,6 +230,9 @@ void termui_plot(const termui* obj)
         // if(child->drawRight < child->drawLeft || child->drawBottom < child->drawTop) break;
         axisOffset += *childMainAxis;
     }
+
+    if(obj->flags & TERMUI_BORDER) draw_border(obj);
+    if(obj->text) draw_text(obj);
 
     fflush(stdout);
 }

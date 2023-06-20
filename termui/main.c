@@ -28,8 +28,7 @@ char* str_trim(const char* src)
 
 termui* build_message(const char* sender, const char* text)
 {
-    return termui_text(text, termui_box(TERMUI_BORDER, 0, 3, 0));
-    return termui_box(TERMUI_BORDER, 0, 4,
+    return termui_box(0, 0, 2,
         termui_box(TERMUI_ROW, 0, 1,
             termui_box(0, 1, 1, 0),
             termui_text(sender, termui_box(0, 5, 1, 0)),
@@ -82,6 +81,9 @@ int main()
             {
                 peopleKey->isEnabled = !peopleKey->isEnabled;
             }
+            else if(strcmp(input, "/d") == 0) messagesKey->scroll--;
+            else if(strcmp(input, "/u") == 0) messagesKey->scroll++;
+            else if(strcmp(input, "/r") == 0) messagesKey->scroll = 0;
             else
             {
                 char* msg = str_trim(input);
