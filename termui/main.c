@@ -28,7 +28,8 @@ char* str_trim(const char* src)
 
 termui* build_message(const char* sender, const char* text)
 {
-    return termui_box(0, 0, 2,
+    return termui_text(text, termui_box(TERMUI_BORDER, 0, 3, 0));
+    return termui_box(TERMUI_BORDER, 0, 4,
         termui_box(TERMUI_ROW, 0, 1,
             termui_box(0, 1, 1, 0),
             termui_text(sender, termui_box(0, 5, 1, 0)),

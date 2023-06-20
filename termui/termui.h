@@ -40,8 +40,8 @@ struct termui
     struct termui **children;
     const char *title, *text;
     int width, height; // The initial size
-    int plotWidth, plotHeight; // Runtime calculated size (changes if widget is expanded)
-    int left, right, top, bottom; // Runtime calculated drawing area
+    int left, right, top, bottom; // Runtime calculated box area
+    int drawLeft, drawRight, drawTop, drawBottom; // Runtime calculated drawing area
     int scroll;
     char isEnabled, flags; // move isEnabled inside flags?
 };

@@ -42,12 +42,12 @@ void termui_fullscreen(termui* obj)
     struct winsize w;
     ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
 
-    obj->width = obj->plotWidth = w.ws_col;
-    obj->height = obj->plotHeight = w.ws_row;
+    obj->width = w.ws_col;
+    obj->height = w.ws_row;
     const int hasBorder = obj->flags & TERMUI_BORDER;
-    obj->left = obj->top = hasBorder;
-    obj->right = obj->width - 1 - hasBorder;
-    obj->bottom = obj->height - 1 - hasBorder;
+    obj->left = obj->top = obj->drawLeft = obj->drawTop = hasBorder;
+    obj->right = obj->drawRight = obj->width - 1 - hasBorder;
+    obj->bottom = obj->drawBottom = obj->height - 1 - hasBorder;
 }
 
 termui* termui_box(char flags, int width, int height, ...)
@@ -56,7 +56,7 @@ termui* termui_box(char flags, int width, int height, ...)
         0,
         0, 0,
         width, height,
-        0, 0,
+        0, 0, 0, 0,
         0, 0, 0, 0,
         0,
         1, flags
@@ -95,7 +95,7 @@ termui* termui_text(const char* text, termui* obj)
 
 void termui_focus(const termui* obj)
 {
-    const int width = obj->plotWidth - 2 * (obj->flags & TERMUI_BORDER);
+    const int width = obj->right - obj->left + 1; // REF: if focus point outside, don't focus
     const int textSize = obj->text ? strlen(obj->text) : 0;
     const int lines = textSize / width;
     const int chars = textSize % width;
@@ -105,10 +105,10 @@ void termui_focus(const termui* obj)
 
 void print_if_inside(const termui* obj, int x, int y, char c)
 {
-    const int l = obj->left; // TODO: don't use variables
-    const int r = obj->right;
-    const int t = obj->top;
-    const int b = obj->bottom;
+    const int l = obj->drawLeft; // TODO: don't use variables
+    const int r = obj->drawRight;
+    const int t = obj->drawTop;
+    const int b = obj->drawBottom;
     if(x < l || x > r || y < t || y > b)
     {
         //printf("ERROR\n");
@@ -120,9 +120,9 @@ void print_if_inside(const termui* obj, int x, int y, char c)
 
 void clear_view(const termui* obj)
 {
-    for(int y = obj->top; y <= obj->bottom; y++)
+    for(int y = obj->drawTop; y <= obj->drawBottom; y++)
     {
-        for(int x = obj->left; x <= obj->right; x++)
+        for(int x = obj->drawLeft; x <= obj->drawRight; x++)
         {
             print_if_inside(obj, x, y, ' ');
         }
@@ -132,10 +132,10 @@ void clear_view(const termui* obj)
 void draw_border(const termui* obj)
 {
     termui real = *obj;
-    real.left--;
-    real.right++;
-    real.top--;
-    real.bottom++;
+    if(real.left-- == real.drawLeft) real.drawLeft--;
+    if(real.right++ == real.drawRight) real.drawRight++;
+    if(real.top-- == real.drawTop) real.drawTop--;
+    if(real.bottom++ == real.drawBottom) real.drawBottom++;
     for(int y = real.top; y <= real.bottom; y++)
     {
         for(int x = real.left; x <= real.right; x++)
@@ -179,7 +179,7 @@ void draw_title(const termui* obj)
     real.top--;
     real.bottom = real.top;
     real.left++;
-    real.right = real.left + strlen(real.title) - 1;
+    real.right = real.left + strlen(real.title) - 1; // REF: realSize myb
     draw_text(&real);
 }
 
@@ -195,11 +195,6 @@ int min(int a, int b)
 
 void termui_plot(const termui* obj)
 {
-    if(obj->right < obj->left || obj->bottom < obj->top)
-    {
-        // exit(1);
-        return;
-    }
     const int isRow = (obj->flags & TERMUI_ROW) >> 1;
     const int isReverse = (obj->flags & TERMUI_REVERSE) >> 2;
 
@@ -236,30 +231,27 @@ void termui_plot(const termui* obj)
         termui* child = obj->children[i];
         if(!child->isEnabled) continue;
 
-        child->plotWidth = child->width;
-        child->plotHeight = child->height;
-        int* childMainAxis = isRow ? &child->plotWidth : &child->plotHeight;
-        int* childCrossAxis = isRow ? &child->plotHeight : &child->plotWidth;
+        int width = child->width;
+        int height = child->height;
+        int* childMainAxis = isRow ? &width : &height;
+        int* childCrossAxis = isRow ? &height : &width;
         if(*childMainAxis == 0) *childMainAxis = expandedSize;
         if(*childCrossAxis == 0) *childCrossAxis = crossAxis;
 
         const int hasBorder = child->flags & TERMUI_BORDER;
         child->left = obj->left + axisOffset * isRow + hasBorder;
         child->top = obj->top + axisOffset * !isRow + hasBorder;
-        child->right = child->left + child->plotWidth - 1 - 2 * hasBorder;
-        child->bottom = child->top + child->plotHeight - 1 - 2 * hasBorder;
+        child->right = child->left + width - 1 - 2 * hasBorder;
+        child->bottom = child->top + height - 1 - 2 * hasBorder;
 
-        child->left = max(child->left, obj->left);
-        child->top = max(child->top, obj->top);
-        child->right = min(child->right, obj->right);
-        child->bottom = min(child->bottom, obj->bottom);
-
-        if(child->text && strcmp(child->text, "debug") == 0)
-        {
-            int here = 44;
-        }
+        child->drawLeft = max(child->left, obj->drawLeft);
+        child->drawTop = max(child->top, obj->drawTop);
+        child->drawRight = min(child->right, obj->drawRight);
+        child->drawBottom = min(child->bottom, obj->drawBottom);
 
         termui_plot(child);
+
+        // if(child->drawRight < child->drawLeft || child->drawBottom < child->drawTop) break;
         axisOffset += *childMainAxis;
     }
 
