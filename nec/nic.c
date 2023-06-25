@@ -13,7 +13,7 @@ size_t nic_hash(const char* str)
     return hash;
 }
 
-nic* create(size_t hash)
+nic* nic_create(size_t hash)
 {
     nic node = { 0, 0, hash, 1 };
     nic* nodep = 0;
@@ -21,34 +21,12 @@ nic* create(size_t hash)
     return nodep;
 }
 
-void calc_height(nic* root)
+void nic_calc_height(nic* root)
 {
     int h1 = 0, h2 = 0;
     if(root->l) h1 = root->l->h;
     if(root->r) h2 = root->r->h;
     root->h = (h1 > h2 ? h1 : h2) + 1;
-}
-
-nic* rot(nic* root, nic** chroot, nic** child, nic* a, nic* b)
-{
-    if(*child && (*child)->h == 1 && (*chroot)->h == 2 && a->hash < (*child)->hash && (*child)->hash < b->hash)
-    {
-        (*child)->l = a;
-        (*child)->r = b;
-        root->h = (*chroot)->h = 1;
-        (*child)->h = 2;
-        nic* what = *child;
-        *child = *chroot = 0;
-        return what;
-    }
-
-    nic* tmpChild = *child;
-    nic* tmpChroot = *chroot;
-    *child = root;
-    *chroot = tmpChild;
-    calc_height(root);
-    calc_height(tmpChroot);
-    return tmpChroot;
 }
 
 int abs(int a)
@@ -57,37 +35,72 @@ int abs(int a)
     return a;
 }
 
-nic* nic_insert_(nic** root, size_t hash)
+nic* nic_balance(nic* root)
 {
-    if(!*root) return create(hash);
+    int heightDiff = 0;
+    if(root->l) heightDiff += root->l->h;
+    if(root->r) heightDiff -= root->r->h;
 
-    if(hash > (*root)->hash)
+    if(abs(heightDiff) < 2) return root;
+
+    nic** side;
+    nic** down;
+    if(heightDiff > 0)
     {
-        nic* node = nic_insert_(&(*root)->r, hash);
-        if(!node) return 0;
-        (*root)->r = node;
+        side = &root->l;
+        down = &root->l->r;
     }
-    else if(hash < (*root)->hash)
+    else
     {
-        nic* node = nic_insert_(&(*root)->l, hash);
+        side = &root->r;
+        down = &root->r->l;
+    }
+
+    nic *sideVal = *side;
+    nic *downVal = *down;
+    nic* min = sideVal->hash < root->hash ? sideVal : root;
+    nic* max = sideVal->hash > root->hash ? sideVal : root;
+    if(downVal && downVal->hash > min->hash && downVal->hash < max->hash)
+    {
+        nic* l = downVal->l;
+        nic* r = downVal->r;
+        downVal->l = min;
+        downVal->r = max;
+        min->r = l;
+        max->l = r;
+        // *down = *side = 0;
+        root->h = sideVal->h = 1;
+        downVal->h = 2;
+        return downVal;
+    }
+
+    *side = downVal;
+    *down = root;
+    nic_calc_height(root);
+    nic_calc_height(sideVal);
+    return sideVal;
+}
+
+nic* nic_insert_(nic* root, size_t hash)
+{
+    if(!root) return nic_create(hash);
+
+    if(hash > root->hash)
+    {
+        nic* node = nic_insert_(root->r, hash);
         if(!node) return 0;
-        (*root)->l = node;
+        root->r = node;
+    }
+    else if(hash < root->hash)
+    {
+        nic* node = nic_insert_(root->l, hash);
+        if(!node) return 0;
+        root->l = node;
     }
     else return 0;
 
-    calc_height(*root);
-
-    nic* l = (*root)->l;
-    nic* r = (*root)->r;
-
-    int heightDiff = 0;
-    if(l) heightDiff += l->h;
-    if(r) heightDiff -= r->h;
-
-    if(abs(heightDiff) < 2) return *root;
-
-    if(heightDiff > 0) return rot(*root, &(*root)->l, &l->r, l, *root);
-    return rot(*root, &(*root)->r, &r->l, *root, r);
+    nic_calc_height(root);
+    return nic_balance(root);
 }
 
 void nic_debug(const nic* root, char* path)

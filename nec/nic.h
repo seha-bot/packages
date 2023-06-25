@@ -20,7 +20,7 @@ struct nic
 typedef struct nic nic;
 
 size_t nic_hash(const char*);
-nic* nic_insert_(nic**, size_t);
+nic* nic_insert_(nic*, size_t);
 
 void nic_debug(const nic*, char*);
 
