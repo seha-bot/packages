@@ -2,105 +2,103 @@
 #include "nec.h"
 #include <stdio.h>
 
-size_t nic_hash(const char* s)
+size_t nic_hash(const char* str)
 {
     size_t hash = 0, offset = 1;
-    while(*s)
+    while(*str)
     {
-        hash += (*(s++) - 31) * offset;
+        hash += (*(str++) - 31) * offset;
         offset *= 96;
     }
     return hash;
 }
 
-size_t nic_find_hash(const nicp* memo, const size_t root, const size_t hash)
+nic* create(size_t hash)
 {
-    if(!root) return 0;
-    const nicp* rp = memo + root - 1;
-
-    if(hash > rp->hash) return nic_find_hash(memo, rp->r, hash);
-    else if(hash < rp->hash) return nic_find_hash(memo, rp->l, hash);
-
-    return root;
+    nic node = { 0, 0, hash, 1 };
+    nic* nodep = 0;
+    nec_push(nodep, node);
+    return nodep;
 }
 
-size_t create(nicp** memo, const size_t hash)
+void calc_height(nic* root)
 {
-    nicp n = { 0, 0, hash, 1 };
-    nec_push(*memo, n);
-    return nec_size(*memo);
+    int h1 = 0, h2 = 0;
+    if(root->l) h1 = root->l->h;
+    if(root->r) h2 = root->r->h;
+    root->h = (h1 > h2 ? h1 : h2) + 1;
 }
 
-void calc_height(const nicp* memo, nicp* root)
+nic* rot(nic* root, nic** chroot, nic** child, nic* a, nic* b)
 {
-    int h = 0;
-    root->h = (memo + root->r - 1)->h;
-    if(root->l) h = (memo + root->l - 1)->h;
-    if(root->r) h = h > root->h ? h : root->h;
-    root->h = h + 1;
-}
-
-size_t rot(nicp* memo, nicp* root, size_t* chroot, size_t* child, const nicp* a, const nicp* b)
-{
-    nicp *chr = memo + *chroot - 1, *chi = memo + *child - 1;
-    if(chi && chi->h == 1 && chr->h == 2 && a->hash < chi->hash && chi->hash < b->hash)
+    if(*child && (*child)->h == 1 && (*chroot)->h == 2 && a->hash < (*child)->hash && (*child)->hash < b->hash)
     {
-        chi->l = a - memo + 1;
-        chi->r = b - memo + 1;
+        (*child)->l = a;
+        (*child)->r = b;
+        root->h = (*chroot)->h = 1;
+        (*child)->h = 2;
+        nic* what = *child;
         *child = *chroot = 0;
-        root->h = chr->h = 1;
-        chi->h = 2;
-        return chi - memo + 1;
+        return what;
     }
 
-    *child = root - memo + 1;
-    *chroot = chi - memo + 1;
-    calc_height(memo, root);
-    calc_height(memo, chr);
-    return chr - memo + 1;
+    nic* tmpChild = *child;
+    nic* tmpChroot = *chroot;
+    *child = root;
+    *chroot = tmpChild;
+    calc_height(root);
+    calc_height(tmpChroot);
+    return tmpChroot;
 }
 
-size_t nic_insert_hash(nicp** memo, const size_t root, size_t hash)
+int abs(int a)
 {
-    if(!root) return create(memo, hash);
-    nicp* rp = *memo + root - 1;
+    if(a < 0) return -a;
+    return a;
+}
 
-    if(hash > rp->hash)
+nic* nic_insert_(nic** root, size_t hash)
+{
+    if(!*root) return create(hash);
+
+    if(hash > (*root)->hash)
     {
-        hash = nic_insert_hash(memo, rp->r, hash);
-        if(!hash) return 0;
-        rp = *memo + root - 1;
-        rp->r = hash;
+        nic* node = nic_insert_(&(*root)->r, hash);
+        if(!node) return 0;
+        (*root)->r = node;
     }
-    else if(hash < rp->hash)
+    else if(hash < (*root)->hash)
     {
-        hash = nic_insert_hash(memo, rp->l, hash);
-        if(!hash) return 0;
-        rp = *memo + root - 1;
-        rp->l = hash;
+        nic* node = nic_insert_(&(*root)->l, hash);
+        if(!node) return 0;
+        (*root)->l = node;
     }
     else return 0;
 
-    calc_height(*memo, rp);
+    calc_height(*root);
 
-    nicp *l = *memo + rp->l - 1, *r = *memo + rp->r - 1;
-    int hdiff = rp->l ? l->h : 0;
-    if(rp->r) hdiff -= r->h;
-    if(abs(hdiff) < 2) return root;
-    if(hdiff > 0) return rot(*memo, rp, &rp->l, &l->r, l, rp);
-    return rot(*memo, rp, &rp->r, &r->l, rp, r);
+    nic* l = (*root)->l;
+    nic* r = (*root)->r;
+
+    int heightDiff = 0;
+    if(l) heightDiff += l->h;
+    if(r) heightDiff -= r->h;
+
+    if(abs(heightDiff) < 2) return *root;
+
+    if(heightDiff > 0) return rot(*root, &(*root)->l, &l->r, l, *root);
+    return rot(*root, &(*root)->r, &r->l, *root, r);
 }
 
-void nic_debug(const nicp* memo, const size_t root, char* path)
+void nic_debug(const nic* root, char* path)
 {
     if(!root) return;
-    const nicp* rpa = memo + root - 1;
-    nec_push(path, '\0');
-    printf("%s/%lu\n", path, rpa->hash);
+    nec_push(path, 0);
+    printf("%s/%lu\n", path, root->hash);
     path[nec_size(path)-1] = 'l';
-    nic_debug(memo, rpa->l, path);
+    nic_debug(root->l, path);
     path[nec_size(path)-1] = 'r';
-    nic_debug(memo, rpa->r, path);
+    nic_debug(root->r, path);
     nec_pop(path);
 }
 

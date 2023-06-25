@@ -39,7 +39,7 @@ void nec_pop_(void** array)
 {
     const size_t size = nec_size_(array);
     if(size == 0) return;
-    if(size == 1) nec_free(array);
+    if(size == 1) nec_free_(array);
     else STORAGE_LEFT(*array, 2) = size - 1;
 }
 
