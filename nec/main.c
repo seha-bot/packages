@@ -45,20 +45,15 @@ int main()
 
     srand(time(0));
     int values = 0;
-    printf("Values: ");
+    // printf("Values: ");
     // nic_assign(&root, 1);
-    // nic_assign(&root, 0);
-    // nic_assign(&root, 4);
-    // nic_assign(&root, 2);
-    // nic_assign(&root, 5);
-    // nic_assign(&root, 3);
     for(int i = 0; i < 10000; i++)
     {
         int hash = rand();
-        //printf("%d ", hash);
+        // printf("%d ", hash);
         values += nic_assign(&root, hash);
-        //printf("\nTree:\n");
-        //nic_debug(root, 0);
+        // printf("\nTree:\n");
+        // nic_debug(root, 0);
     }
 
     //printf("\nTree:\n");

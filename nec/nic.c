@@ -57,18 +57,16 @@ nic* nic_balance(nic* root)
     }
 
     nic *sideVal = *side;
+    if(!down) return root;
     nic *downVal = *down;
     nic* min = sideVal->hash < root->hash ? sideVal : root;
     nic* max = sideVal->hash > root->hash ? sideVal : root;
     if(downVal && downVal->hash > min->hash && downVal->hash < max->hash)
     {
-        nic* l = downVal->l;
-        nic* r = downVal->r;
-        downVal->l = min;
-        downVal->r = max;
-        min->r = l;
-        max->l = r;
-        // *down = *side = 0;
+        min->r = downVal->l;
+        max->l = downVal->r;
+        downVal->l = nic_balance(min);
+        downVal->r = nic_balance(max);
         root->h = sideVal->h = 1;
         downVal->h = 2;
         return downVal;
