@@ -58,6 +58,11 @@ int main()
     nic_map_double(&map, "Vitez", 33.64);
     nic_map_double(&map, "Travnik", 456.22);
 
+    for(int i = 0; i < nec_size(map.keys); i++)
+    {
+        printf("Key: %s\n", map.keys[i]);
+    }
+
     double* temp = nic_map_find_double(&map, "Vitez");
     if(temp) printf("TEMPERATURE = %f\n", *temp);
 
