@@ -1,6 +1,7 @@
 #include "nic.h"
 #include "nec.h"
 #include <stdio.h>
+#include <stdint.h>
 
 size_t nic_hash(const char* str)
 {
@@ -13,20 +14,27 @@ size_t nic_hash(const char* str)
     return hash;
 }
 
-nic* nic_create(size_t hash)
+void nic_calc_height(nic* nodes, nic* node)
 {
-    nic node = { 0, 0, hash, 1 };
-    nic* nodep = 0;
-    nec_push(nodep, node);
-    return nodep;
-}
-
-void nic_calc_height(nic* root)
-{
+    if(!nodes)
+    {
+        printf("ERROR\n");
+        return;
+    }
+    if(node->l > nec_size(nodes))
+    {
+        printf("Serious problem L\n");
+        return;
+    }
+    if(node->r > nec_size(nodes))
+    {
+        printf("Serious problem R\n");
+        return;
+    }
     int h1 = 0, h2 = 0;
-    if(root->l) h1 = root->l->h;
-    if(root->r) h2 = root->r->h;
-    root->h = (h1 > h2 ? h1 : h2) + 1;
+    if(node->l) h1 = nodes[node->l - 1].height;
+    if(node->r) h2 = nodes[node->r - 1].height;
+    node->height = (h1 > h2 ? h1 : h2) + 1;
 }
 
 int abs(int a)
@@ -35,81 +43,114 @@ int abs(int a)
     return a;
 }
 
-nic* nic_balance(nic* root)
+nic* nic_balance(nic* nodes, nic* root)
 {
+    if(!nodes)
+    {
+        printf("ERROR\n");
+        return 0;
+    }
     int heightDiff = 0;
-    if(root->l) heightDiff += root->l->h;
-    if(root->r) heightDiff -= root->r->h;
+    if(root->l) heightDiff += nodes[root->l - 1].height;
+    if(root->r) heightDiff -= nodes[root->r - 1].height;
 
     if(abs(heightDiff) < 2) return root;
 
-    nic** side;
-    nic** down;
+    size_t* sideId;
+    size_t* downId;
     if(heightDiff > 0)
     {
-        side = &root->l;
-        down = &root->l->r;
+        sideId = &root->l;
+        downId = &(nodes[root->l - 1].r);
     }
     else
     {
-        side = &root->r;
-        down = &root->r->l;
+        sideId = &root->r;
+        downId = &(nodes[root->r - 1].l);
     }
 
-    nic *sideVal = *side;
-    if(!down) return root;
-    nic *downVal = *down;
-    nic* min = sideVal->hash < root->hash ? sideVal : root;
-    nic* max = sideVal->hash > root->hash ? sideVal : root;
-    if(downVal && downVal->hash > min->hash && downVal->hash < max->hash)
+    nic* side = &(nodes[*sideId - 1]);
+    nic* down = &(nodes[*downId - 1]);
+    nic* min = side->hash < root->hash ? side : root;
+    nic* max = side->hash > root->hash ? side : root;
+    if(*downId && down->hash > min->hash && down->hash < max->hash)
     {
-        min->r = downVal->l;
-        max->l = downVal->r;
-        downVal->l = nic_balance(min);
-        downVal->r = nic_balance(max);
-        root->h = sideVal->h = 1;
-        downVal->h = 2;
-        return downVal;
+        min->r = down->l;
+        max->l = down->r;
+        nic_calc_height(nodes, min);
+        nic_calc_height(nodes, max);
+        down->l = nic_balance(nodes, min) - nodes + 1;
+        down->r = nic_balance(nodes, max) - nodes + 1;
+        nic_calc_height(nodes, down);
+        return down;
     }
 
-    *side = downVal;
-    *down = root;
-    nic_calc_height(root);
-    nic_calc_height(sideVal);
-    return sideVal;
+    *sideId = down - nodes + 1;
+    *downId = root - nodes + 1;
+    nic_calc_height(nodes, root);
+    nic_calc_height(nodes, side);
+    // root->height--;
+    // side->height++;
+    return side;
 }
 
-nic* nic_insert_(nic* root, size_t hash)
+int nic_insert_(nic** nodes, size_t* nodeId, size_t hash)
 {
-    if(!root) return nic_create(hash);
-
-    if(hash > root->hash)
+    if(*nodeId == 0)
     {
-        nic* node = nic_insert_(root->r, hash);
-        if(!node) return 0;
-        root->r = node;
+        nic node = { 0, 0, hash, 1 };
+        nec_push((*nodes), node);
+        *nodeId = nec_size_((void**)nodes);
+        return 1;
     }
-    else if(hash < root->hash)
-    {
-        nic* node = nic_insert_(root->l, hash);
-        if(!node) return 0;
-        root->l = node;
-    }
-    else return 0;
+    nic* node = &((*nodes)[*nodeId - 1]);
+    if(hash == node->hash) return 0;
 
-    nic_calc_height(root);
-    return nic_balance(root);
+    size_t nextId = hash > node->hash ? node->r : node->l;
+    if(!nic_insert_(nodes, &nextId, hash)) return 0;
+    node = &((*nodes)[*nodeId - 1]);
+    if(hash > node->hash) node->r = nextId;
+    else node->l = nextId;
+
+    nic_calc_height(*nodes, node);
+    *nodeId = nic_balance(*nodes, node) - *nodes + 1;
+    return 1;
 }
 
-void nic_debug(const nic* root, char* path)
+void nic_debug(nic* nodes, size_t nodeId, char* path)
 {
-    if(!root) return;
+    if(!nodeId) return;
     nec_push(path, 0);
-    printf("%s/%lu\n", path, root->hash);
+    printf("%s/%lu\n", path, nodes[nodeId - 1].hash);
     path[nec_size(path)-1] = 'l';
-    nic_debug(root->l, path);
+    nic_debug(nodes, nodes[nodeId - 1].l, path);
     path[nec_size(path)-1] = 'r';
-    nic_debug(root->r, path);
+    nic_debug(nodes, nodes[nodeId - 1].r, path);
     nec_pop(path);
+}
+
+int test_tree(nic* nodes, size_t nodeId, int* discovered)
+{
+    nic node = nodes[nodeId - 1];
+    *discovered = *discovered + 1;
+    int h1 = 0, h2 = 0;
+    if(node.l)
+    {
+        h1 = nodes[node.l - 1].height;
+        if(nodes[node.l - 1].hash >= node.hash) return 2;
+        int status = test_tree(nodes, node.l, discovered);
+        if(status != 0) return status;
+    }
+    if(node.r)
+    {
+        h2 = nodes[node.r - 1].height;
+        if(nodes[node.r - 1].hash <= node.hash) return 2;
+        int status = test_tree(nodes, node.r, discovered);
+        if(status != 0) return status;
+    }
+
+    int diff = abs(h2 - h1);
+    if(diff >= 2) return 1;
+    return 0;
 }
 

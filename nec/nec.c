@@ -29,7 +29,8 @@ void nec_push_(void** array, size_t valueSize)
     {
         if(reallocate(array, valueSize) != 0)
         {
-            printf("ERROR\n");
+            printf("Nec error: not enough memory?\n");
+            return;
         }
     }
     STORAGE_LEFT(*array, 2) = size + 1;

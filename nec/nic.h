@@ -11,18 +11,18 @@
 
 #include <stddef.h>
 
-struct nic
+typedef struct
 {
-    struct nic *l, *r;
+    size_t l, r;
     size_t hash;
-    int h; // TODO rename to height
-};
-typedef struct nic nic;
+    int height;
+} nic;
 
 size_t nic_hash(const char*);
-nic* nic_insert_(nic*, size_t);
+int nic_insert_(nic**, size_t*, size_t);
 
-void nic_debug(const nic*, char*);
+void nic_debug(nic*, size_t, char*);
+int test_tree(nic* nodes, size_t nodeId, int* discovered);
 
 #endif /* SEHA_NIC */
 
