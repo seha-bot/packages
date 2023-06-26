@@ -10,6 +10,7 @@
 // Supported key chars '!' - '~'
 
 #include <stddef.h>
+#include "nec.h"
 
 typedef struct
 {
@@ -29,15 +30,25 @@ size_t nic_hash(const char*);
 // If we had classes it would all be so much easier
 
 #define nic_type(type) \
-typedef struct { nic* nodes; type* values; size_t root; } nic_ ## type; \
+typedef struct \
+{ \
+    nic* nodes; \
+    size_t root; \
+    type* values; \
+    char** keys; \
+} nic_ ## type; \
 nic_ ## type nic_init_ ## type() \
 { \
-    return (nic_ ## type){ 0, 0, 0}; \
+    return (nic_ ## type){ 0, 0, 0, 0 }; \
 } \
 int nic_map_ ## type(nic_ ## type * tree, const char* key, type value) \
 { \
     if(!nic_set(&tree->nodes, &tree->root, nic_hash(key))) return 0; \
     nec_push(tree->values, value); \
+    char* keyCopy = 0; \
+    while(*key) nec_push(keyCopy, *key++); \
+    nec_push(keyCopy, 0); \
+    nec_push(tree->keys, keyCopy); \
     return 1; \
 } \
 type* nic_map_find_ ## type(const nic_ ## type * tree, const char* key) \
@@ -50,6 +61,11 @@ void nic_clear_ ## type(nic_ ## type * tree) \
 { \
     nec_free(tree->nodes); \
     nec_free(tree->values); \
+    for(int i = 0; i < nec_size(tree->keys); i++) \
+    { \
+        nec_free(tree->keys[i]); \
+    } \
+    nec_free(tree->keys); \
     tree->root = 0; \
 }
 

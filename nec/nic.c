@@ -1,5 +1,4 @@
 #include "nic.h"
-#include "nec.h"
 
 size_t nic_find(const nic* nodes, size_t nodeId, size_t hash)
 {
