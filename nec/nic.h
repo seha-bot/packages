@@ -1,8 +1,6 @@
 #ifndef SEHA_NIC
 #define SEHA_NIC
 
-#include "nec.h"
-
 // NO INDEX CONTAINER
 //
 // Balanced binary tree.
@@ -11,60 +9,49 @@
 // Keys under 10 characters will work fine.
 // Supported key chars '!' - '~'
 
-struct nicp
-{
-    size_t l, r, hash;
-    int h;
-};
-typedef struct nicp nicp;
+#include <stddef.h>
 
 typedef struct
 {
-    size_t root;
-    nicp* memo;
-    void* data;
+    size_t l, r;
+    size_t hash;
+    int height;
 } nic;
 
+size_t nic_find(const nic*, size_t, size_t);
+int nic_set(nic**, size_t*, size_t);
+
 size_t nic_hash(const char*);
-size_t nic_find_hash(const nicp*, const size_t, const size_t);
-size_t nic_insert_hash(nicp**, const size_t, size_t);
-void nic_debug(const nicp*, const size_t, char*);
 
-// Find definitions
-#define nic_find(__nic_a, __nic_k) nic_find_hash(__nic_a.memo, __nic_a.root, __nic_k)
+// Set functions aren't currently included in nic_type
+// because I don't like the implementation.
+// nic_set should also have a compare function passed to it.
+// If we had classes it would all be so much easier
 
-#define nic_imap_find(__nic_t, __nic_a, __nic_k) \
-({ \
-    const size_t __nic_r = nic_find(__nic_a, __nic_k); \
-    __nic_r ? (__nic_t*)__nic_a.data + __nic_r - 1 : 0; \
-})
-
-#define nic_map_find(__nic_t, __nic_a, __nic_k) nic_imap_find(__nic_t, __nic_a, nic_hash(__nic_k))
-
-// Insert definitions
-#define nic_insert(__nic_a, __nic_k) \
-({ \
-    const size_t __nic_r = nic_insert_hash(&__nic_a.memo, __nic_a.root, __nic_k); \
-    __nic_r ? __nic_a.root = __nic_r : 0; \
-})
-
-#define nic_imap(__nic_a, __nic_k, __nic_v) \
-({ \
-    const size_t __nic_r = nic_insert_hash(&__nic_a.memo, __nic_a.root, __nic_k); \
-    if(__nic_r) \
-    { \
-        __nic_a.root = __nic_r; \
-        typeof(__nic_v)* __nic_p = __nic_a.data; \
-        nec_push(__nic_p, __nic_v); \
-        __nic_a.data = __nic_p; \
-    } \
-    else ((typeof(__nic_v)*)__nic_a.data)[nic_find(__nic_a, __nic_k) - 1] = __nic_v; \
-})
-
-#define nic_map(__nic_a, __nic_k, __nic_v) nic_imap(__nic_a, nic_hash(__nic_k), __nic_v)
-
-// Free definition
-#define nic_free(__nic_a) (nec_free(__nic_a.memo), nec_free(__nic_a.data))
+#define nic_type(type) \
+typedef struct { nic* nodes; type* values; size_t root; } nic_ ## type; \
+nic_ ## type nic_init_ ## type() \
+{ \
+    return (nic_ ## type){ 0, 0, 0}; \
+} \
+int nic_map_ ## type(nic_ ## type * tree, const char* key, type value) \
+{ \
+    if(!nic_set(&tree->nodes, &tree->root, nic_hash(key))) return 0; \
+    nec_push(tree->values, value); \
+    return 1; \
+} \
+type* nic_map_find_ ## type(const nic_ ## type * tree, const char* key) \
+{ \
+    size_t id = nic_find(tree->nodes, tree->root, nic_hash(key)); \
+    if(id == 0) return 0; \
+    return &tree->values[id - 1]; \
+} \
+void nic_clear_ ## type(nic_ ## type * tree) \
+{ \
+    nec_free(tree->nodes); \
+    nec_free(tree->values); \
+    tree->root = 0; \
+}
 
 #endif /* SEHA_NIC */
 

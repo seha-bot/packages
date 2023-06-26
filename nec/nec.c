@@ -29,7 +29,8 @@ void nec_push_(void** array, size_t valueSize)
     {
         if(reallocate(array, valueSize) != 0)
         {
-            printf("ERROR\n");
+            printf("Nec error: not enough memory?\n");
+            return;
         }
     }
     STORAGE_LEFT(*array, 2) = size + 1;
@@ -39,7 +40,7 @@ void nec_pop_(void** array)
 {
     const size_t size = nec_size_(array);
     if(size == 0) return;
-    if(size == 1) nec_free(array);
+    if(size == 1) nec_free_(array);
     else STORAGE_LEFT(*array, 2) = size - 1;
 }
 
