@@ -29,19 +29,19 @@ size_t nic_hash(const char*);
 // nic_set should also have a compare function passed to it.
 // If we had classes it would all be so much easier
 
-#define nic_type(type) \
+#define nic_define(type, name) \
 typedef struct \
 { \
     nic* nodes; \
     size_t root; \
     type* values; \
     char** keys; \
-} nic_ ## type; \
-nic_ ## type nic_init_ ## type() \
+} nic_ ## name; \
+nic_ ## name nic_init_ ## name() \
 { \
-    return (nic_ ## type){ 0, 0, 0, 0 }; \
+    return (nic_ ## name){ 0, 0, 0, 0 }; \
 } \
-int nic_map_ ## type(nic_ ## type * tree, const char* key, type value) \
+int nic_map_ ## name(nic_ ## name * tree, const char* key, type value) \
 { \
     if(!nic_set(&tree->nodes, &tree->root, nic_hash(key))) return 0; \
     nec_push(tree->values, value); \
@@ -51,13 +51,13 @@ int nic_map_ ## type(nic_ ## type * tree, const char* key, type value) \
     nec_push(tree->keys, keyCopy); \
     return 1; \
 } \
-type* nic_map_find_ ## type(const nic_ ## type * tree, const char* key) \
+type* nic_map_find_ ## name(const nic_ ## name * tree, const char* key) \
 { \
     size_t id = nic_find(tree->nodes, tree->root, nic_hash(key)); \
     if(id == 0) return 0; \
     return &tree->values[id - 1]; \
 } \
-void nic_clear_ ## type(nic_ ## type * tree) \
+void nic_clear_ ## name(nic_ ## name * tree) \
 { \
     nec_free(tree->nodes); \
     nec_free(tree->values); \
