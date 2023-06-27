@@ -49,25 +49,25 @@ size_t nic_hash_double(double value)
     return value * 100000.0;
 }
 
-nic_type(double)
+nic_define(double, real)
 
 int main()
 {
-    nic_double map = nic_init_double();
+    nic_real map = nic_init_real();
 
-    nic_map_double(&map, "Vitez", 33.64);
-    nic_map_double(&map, "Travnik", 456.22);
+    nic_map_real(&map, "Vitez", 33.64);
+    nic_map_real(&map, "Travnik", 456.22);
 
     for(int i = 0; i < nec_size(map.keys); i++)
     {
         printf("Key: %s\n", map.keys[i]);
     }
 
-    double* temp = nic_map_find_double(&map, "Vitez");
+    double* temp = nic_map_find_real(&map, "Vitez");
     if(temp) printf("TEMPERATURE = %f\n", *temp);
 
     printf("Map height: %d\n", map.nodes[map.root - 1].height);
-    nic_clear_double(&map);
+    nic_clear_real(&map);
     return 0;
 }
 
