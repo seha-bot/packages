@@ -20,7 +20,7 @@ typedef struct
 } nic;
 
 size_t nic_find(const nic*, size_t, size_t);
-int nic_set(nic**, size_t*, size_t);
+size_t nic_set(nic**, size_t*, size_t);
 
 size_t nic_hash(const char*);
 
@@ -43,7 +43,12 @@ nic_ ## name nic_init_ ## name() \
 } \
 int nic_map_ ## name(nic_ ## name * tree, const char* key, type value) \
 { \
-    if(!nic_set(&tree->nodes, &tree->root, nic_hash(key))) return 0; \
+    size_t nodeId; \
+    if((nodeId = nic_set(&tree->nodes, &tree->root, nic_hash(key)))) \
+    { \
+        tree->values[nodeId - 1] = value; \
+        return 0; \
+    } \
     nec_push(tree->values, value); \
     char* keyCopy = 0; \
     while(*key) nec_push(keyCopy, *key++); \

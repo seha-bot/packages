@@ -2,6 +2,7 @@
 
 size_t nic_find(const nic* nodes, size_t nodeId, size_t hash)
 {
+    if(nodeId == 0) return 0;
     nic node = nodes[nodeId - 1];
     if(hash > node.hash) return nic_find(nodes, node.r, hash);
     if(hash < node.hash) return nic_find(nodes, node.l, hash);
@@ -60,27 +61,28 @@ nic* nic_balance(nic* nodes, nic* root)
     return side;
 }
 
-int nic_set(nic** nodes, size_t* nodeId, size_t hash)
+size_t nic_set(nic** nodes, size_t* nodeId, size_t hash)
 {
     if(*nodeId == 0)
     {
         nic node = { 0, 0, hash, 1 };
         nec_push((*nodes), node);
         *nodeId = nec_size_((void**)nodes);
-        return 1;
+        return 0;
     }
     nic* node = &((*nodes)[*nodeId - 1]);
-    if(hash == node->hash) return 0;
+    if(hash == node->hash) return *nodeId;
 
+    size_t returned;
     size_t nextId = hash > node->hash ? node->r : node->l;
-    if(!nic_set(nodes, &nextId, hash)) return 0;
+    if(!(returned = nic_set(nodes, &nextId, hash))) return returned;
     node = &((*nodes)[*nodeId - 1]);
     if(hash > node->hash) node->r = nextId;
     else node->l = nextId;
 
     nic_calc_height(*nodes, node);
     *nodeId = nic_balance(*nodes, node) - *nodes + 1;
-    return 1;
+    return 0;
 }
 
 size_t nic_hash(const char* str)

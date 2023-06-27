@@ -57,6 +57,7 @@ int main()
 
     nic_map_real(&map, "Vitez", 33.64);
     nic_map_real(&map, "Travnik", 456.22);
+    nic_map_real(&map, "Vitez", -200.0);
 
     for(int i = 0; i < nec_size(map.keys); i++)
     {
@@ -65,6 +66,9 @@ int main()
 
     double* temp = nic_map_find_real(&map, "Vitez");
     if(temp) printf("TEMPERATURE = %f\n", *temp);
+
+    double* temp1 = nic_map_find_real(&map, "Zenica");
+    if(temp1) printf("TEMPERATURE = %f\n", *temp1);
 
     printf("Map height: %d\n", map.nodes[map.root - 1].height);
     nic_clear_real(&map);
