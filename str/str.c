@@ -1,6 +1,9 @@
 #include "str.h"
 #include "nec.h"
 #include <ctype.h>
+#include <string.h>
+#include <stdarg.h>
+
 
 void str_append(char** out, const char* src)
 {
@@ -58,3 +61,56 @@ char* str_trim(const char* src)
     nec_free(left);
     return right;
 }
+
+char** str_split(const char* str, int patternCount, ...)
+{
+    struct pattern
+    {
+        char* text;
+        size_t size;
+    };
+    struct pattern* patterns = 0;
+
+    va_list args;
+    va_start(args, patternCount);
+    for(int i = 0; i < patternCount; i++)
+    {
+        struct pattern pattern;
+        pattern.text = va_arg(args, char*);
+        pattern.size = strlen(pattern.text);
+        nec_push(patterns, pattern);
+    }
+    va_end(args);
+
+    int i = 0;
+    char* shard = 0;
+    char** shards = 0;
+    while(str[i] != 0)
+    {
+        int size = -1;
+        for(int j = 0; j < nec_size(patterns); j++)
+        {
+            if(strncmp(str + i, patterns[j].text, patterns[j].size) == 0)
+            {
+                size = patterns[j].size;
+                break;
+            }
+        }
+        if(size != -1)
+        {
+            i += size;
+            if(shard == 0) continue;
+            nec_push(shard, 0);
+            nec_push(shards, shard);
+            shard = 0;
+            continue;
+        }
+        nec_push(shard, str[i]);
+        i++;
+    }
+    if(shard != 0) nec_push(shards, shard);
+
+    nec_free(patterns);
+    return shards;
+}
+
