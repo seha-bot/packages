@@ -62,7 +62,7 @@ char* str_trim(const char* src)
     return right;
 }
 
-char** str_split(const char* str, int patternCount, ...)
+char** str_split(const char* str, int includePatterns, int patternCount, ...)
 {
     struct pattern
     {
@@ -87,8 +87,8 @@ char** str_split(const char* str, int patternCount, ...)
     char** shards = 0;
     while(str[i] != 0)
     {
-        int size = -1;
-        for(int j = 0; j < nec_size(patterns); j++)
+        int size = -1, j = 0;
+        for(; j < nec_size(patterns); j++)
         {
             if(strncmp(str + i, patterns[j].text, patterns[j].size) == 0)
             {
@@ -99,10 +99,16 @@ char** str_split(const char* str, int patternCount, ...)
         if(size != -1)
         {
             i += size;
-            if(shard == 0) continue;
-            nec_push(shard, 0);
-            nec_push(shards, shard);
-            shard = 0;
+            if(shard)
+            {
+                nec_push(shard, 0);
+                nec_push(shards, shard);
+                shard = 0;
+            }
+            if(includePatterns)
+            {
+                nec_push(shards, str_cpy(patterns[j].text));
+            }
             continue;
         }
         nec_push(shard, str[i]);
