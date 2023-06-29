@@ -75,7 +75,7 @@ size_t nic_set(nic** nodes, size_t* nodeId, size_t hash)
 
     size_t returned;
     size_t nextId = hash > node->hash ? node->r : node->l;
-    if(!(returned = nic_set(nodes, &nextId, hash))) return returned;
+    if((returned = nic_set(nodes, &nextId, hash))) return returned;
     node = &((*nodes)[*nodeId - 1]);
     if(hash > node->hash) node->r = nextId;
     else node->l = nextId;
