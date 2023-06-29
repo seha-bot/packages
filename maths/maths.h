@@ -10,7 +10,5 @@ float minf(float, float);
 int absi(int);
 float absf(float);
 
-int eval(const char*);
-
 #endif /* SEHA_MATHS */
 
