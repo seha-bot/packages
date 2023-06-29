@@ -120,55 +120,62 @@ char** str_split(const char* str, int includePatterns, int patternCount, ...)
     return shards;
 }
 
-int eval_doop(int value, int lastV, int a, char op, char lastO)
-{
-    if(lastO == '*' || lastO == '/')
-    {
-        if(op == '*') return value * a;
-        if(op == '/') return value / a;
-    }
-    switch(op)
-    {
-    case '+': return value + a;
-    case '-': return value - a;
-    case '*': return lastV + (value - lastV) * a;
-    case '/': return lastV + (value - lastV) / a;
-    }
-    return 0;
-}
-
 int eval_(char** shards, int* i)
 {
     int value = 0;
-    int lastV = 0;
+    int mostRecentAddition = 0;
+    int isLastShardMultiplication = 0;
+    int polarity = 1;
     char op = '+';
-    char lastO = '+';
 
     while((*i)++ < nec_size(shards))
     {
-        int j = *i - 1;
-        int what = lastV;
-        char huh = lastO;
-        switch(shards[j][0])
+        char* shard = shards[*i - 1];
+        if(shard[0] == ')')
         {
-        case ')': return value;
-        case '(':
-            lastV = value;
-            lastO = op;
-            value = eval_doop(value, what, eval_(shards, i), op, huh);
-            break;
-        case '+':
-        case '-':
-        case '*':
-        case '/':
-            op = shards[j][0];
-            break;
-        default:
-            lastV = value;
-            lastO = op;
-            value = eval_doop(value, what, atoi(shards[j]), op, huh);
+            nec_free(shard);
+            return value;
         }
-        nec_free(shards[j]);
+        if(shard[0] == '+' || shard[0] == '*' || shard[0] == '/')
+        {
+            isLastShardMultiplication = shard[0] != '+';
+            op = shard[0];
+            nec_free(shard);
+            continue;
+        }
+        if(shard[0] == '-')
+        {
+            polarity = -polarity;
+            if(!isLastShardMultiplication) op = '+';
+            isLastShardMultiplication = 0;
+            nec_free(shard);
+            continue;
+        }
+
+        int toAdd = shard[0] == '(' ? eval_(shards, i) : atoi(shard);
+        toAdd *= polarity;
+        polarity = 1;
+        isLastShardMultiplication = 0;
+
+        if(op == '*')
+        {
+            value -= mostRecentAddition;
+            mostRecentAddition *= toAdd;
+            value += mostRecentAddition;
+        }
+        else if(op == '/')
+        {
+            value -= mostRecentAddition;
+            mostRecentAddition /= toAdd;
+            value += mostRecentAddition;
+        }
+        else
+        {
+            mostRecentAddition = toAdd;
+            value += toAdd;
+        }
+
+        nec_free(shard);
     }
 
     return value;
